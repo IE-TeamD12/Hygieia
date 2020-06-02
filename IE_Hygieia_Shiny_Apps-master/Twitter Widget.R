@@ -1,12 +1,15 @@
 # THIS APPLICATION WILL LET THE USER SEARCH ANYTHING ON TWITTER (ALTHOUGH IT IS RECOMMENDED THAT THE USER SEARCHES ONLY FOR INFECTIONS)
 # THIS WILL HELP THE USER UNDERSTAND WHAT ARE PEOPLE TALKING ABOUT ONLINE ABOUT ANYTHING
 
+# THIS APPLICATION HAS BEEN DEVELOPED BY HYGIEIA, A PLATFORM FOR PREVENTING INFECTIONS AT THE WORKPLACE
+
 # Initializing all packages
 
 library(shinydashboard)
 library(shiny)
 library(shinyalert)
 library(shinyWidgets)
+library(dashboardthemes)
 library(rtweet)
 library(dplyr)
 library(tidyr)
@@ -20,7 +23,6 @@ library(SnowballC)
 library(wordcloud2)
 library(ggpubr)
 library(textdata)
-library(processx)
 
 app_name <- 'Twitter*sentiment*analysis' # Declaring Access Tokens to connect to our Twitter App
 consumer_key <- 'GHxGo7sfUnGQFdbpe0L3bw7Kz'
@@ -34,11 +36,24 @@ create_token(app = app_name,
              access_token = access_token,
              access_secret = access_secret) # Creating Access Consumer Tokens
 
+logo_turquoise_gradient <- shinyDashboardLogoDIY( # Making a customised header logo which wil appear on the top left part of the application
+  
+  boldText = ""
+  ,mainText = ""
+  ,textSize = 23
+  ,badgeText = "TWITTER ANALYTICS" # Header text
+  ,badgeTextColor = "white"
+  ,badgeTextSize = 3.5
+  ,badgeBackColor = "#40E0D0"
+  ,badgeBorderRadius = 10
+  
+)
+
 # UI side design
 
 ui <- dashboardPage(skin = "blue", # Making the ehader blue
                     
-                    dashboardHeader(title = "Twitter Widget" # Declaring header title
+                    dashboardHeader(title = logo_turquoise_gradient # Declaring header title
                                     
                                     
                                     
@@ -49,21 +64,23 @@ ui <- dashboardPage(skin = "blue", # Making the ehader blue
                       
                       fluidRow(column(12, div(style = "height:100px", 
                                               
-                                              searchInput(inputId = "TwitterSearch", label = "Infections People are talking about", # Declaring user input id and label
-                                                          placeholder = "COVID-19", btnSearch = icon("search"), btnReset = icon("remove"))) # Declaring search options and placeholders and icons
+                                              searchInput(inputId = "TwitterSearch", label = "WHAT DO YOU WANT TO SEARCH?", # Declaring user input id and label
+                                                          placeholder = "Search here", btnSearch = icon("search"), btnReset = icon("remove"))) # Declaring search options and placeholders and icons
                       )),
                       
                       fluidRow(column(12, div(style = "height:100px", 
                                               
-                                              selectInput(inputId = "TweetType", label = "Tweet Type", # Declaring input id and label
+                                              selectInput(inputId = "TweetType", label = "TWEET TYPE", # Declaring input id and label
                                                           choices = c("popular", "mixed", "recent"), # Declaring the choices for the user
                                                           selected = "popular", multiple = FALSE)) # Disabling multi-select
                       )),
                       
+                      tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #40E0D0}")),
+                      
                       fluidRow(column(12, div(style = "height:100px", 
                                               
-                                              sliderInput(inputId = "NumberOfTweets", label = "Desired No. of Tweets", # Declaring the input id for tweets and the labels
-                                                          min = 1, max = 1000, value = 100, step = 1)) # Declaring the specifications for the slider input
+                                              sliderInput(inputId = "NumberOfTweets", label = "DESIRED NO. OF TWEETS", # Declaring the input id for tweets and the labels
+                                                          min = 1, max = 300, value = 100, step = 1)) # Declaring the specifications for the slider input
                       )),
                       
                       
@@ -74,7 +91,7 @@ ui <- dashboardPage(skin = "blue", # Making the ehader blue
                       
                     ),
                     
-                    dashboardBody( useShinyalert(), # Enabling Shinyalert mechanism
+                    dashboardBody( useShinyalert(), shinyDashboardThemes(theme = "grey_dark"), # Enabling Shinyalert mechanism
                                    
                                    tags$head(tags$style(HTML('
                                                              .main-header .logo {
@@ -86,6 +103,35 @@ ui <- dashboardPage(skin = "blue", # Making the ehader blue
                                                              }
                                                              '))), # Making a CSS class for the font and font size
                                    
+                                   tags$style(HTML(" 
+                                             .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                                             color: #ffffff;
+                                             }
+                                             .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+
+
+                                             .dataTables_length select {
+                                             color: #ffffff;
+                                             background-color: #0E334A
+                                             }
+
+
+                                             .dataTables_filter input {
+                                             color: #0E334A;
+                                             background-color: #ffffff
+                                             }
+
+                                             thead {
+                                             color: #ffffff;
+                                             }
+
+                                             tbody {
+                                             color: #ffffff;
+                                             }" # Custom CSS code to change the color of the 
+                                                   
+                                                   
+                                   )),
+                                   
                                    tags$style(type="text/css", # Making a custom CSS class to hide all errors popping up on the front end
                                               ".shiny-output-error { visibility: hidden; }",
                                               ".shiny-output-error:before { visibility: hidden; }"
@@ -93,15 +139,15 @@ ui <- dashboardPage(skin = "blue", # Making the ehader blue
                                    
                                    fluidRow(
                                      
-                                     tabBox(height = "1000px", width = "1000px", # Making the dimensions for the web page
+                                     tabBox(height = "1100px", width = "1000px", # Making the dimensions for the web page
                                             
                                             tabPanel(title = tagList(icon("user", class = "fas fa-project-diagram") # Fixing the icon for the tabpanel
                                                                      
                                                                      , "Tweet Feed Analytics"),
                                                      
-                                                     box(title = "TWEET WORDCLOUD", status = "primary", solidHeader = TRUE, 
+                                                     box(title = "TWEETS WORDCLOUD", status = "primary", solidHeader = TRUE, 
                                                          
-                                                         collapsible = TRUE, wordcloud2Output("TweetWordCloud"), width = 97), # Sending the wordcloud through the render function
+                                                         collapsible = TRUE, wordcloud2Output("TweetWordCloud", width = "98%"), width = 97), # Sending the wordcloud through the render function
                                                      
                                                      box(title = "TWEETS", status = "primary", solidHeader = TRUE,
                                                          
@@ -117,9 +163,9 @@ ui <- dashboardPage(skin = "blue", # Making the ehader blue
 
 server <- function(input, output, session) {
   
-  shinyalert(title = "INSTRUCTIONS TO USE", text = "Enter the desired topic you want to search for on Twitter in the
-             textbox on the left!", type = "info", showConfirmButton = TRUE, confirmButtonText = "GOT IT!",
-             confirmButtonCol = "#4CA3DD") # Shinyalert popup to show instruct the user on how to use the application
+  shinyalert(title = "WELCOME TO OUR TWITTER API!", text = paste("Enter the desired topic you want to search for on Twitter in the",
+              strong("textbox on the left and hit the search icon!")), type = "info", showConfirmButton = TRUE, confirmButtonText = "GOT IT!",
+             confirmButtonCol = "#40E0D0", closeOnClickOutside = TRUE, html = TRUE) # Shinyalert popup to show instruct the user on how to use the application
   
   
   output$TweetWordCloud <- renderWordcloud2({ # Render function for the wordcloud
