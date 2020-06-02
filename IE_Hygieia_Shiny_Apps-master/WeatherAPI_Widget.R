@@ -10,25 +10,38 @@ library(shinydashboard)
 library(dplyr)
 library(shiny)
 library(shinyalert)
+library(dashboardthemes)
 library(owmr)
 library(ggplot2)
 library(lubridate)
 library(ggdark)
-library(plotly)
 library(tidyr)
 library(shinyjs)
+
+logo_turquoise_gradient <- shinyDashboardLogoDIY( # Making a customised header logo which wil appear on the top left part of the application
+  
+  boldText = ""
+  ,mainText = ""
+  ,textSize = 18
+  ,badgeText = "WEATHER FORECAST" # Header text
+  ,badgeTextColor = "white"
+  ,badgeTextSize = 3.5
+  ,badgeBackColor = "#40E0D0"
+  ,badgeBorderRadius = 10
+  
+)
 
 # UI side design
 
 ui <- dashboardPage(skin = "blue", # Giving a blue header
                     
-                    dashboardHeader(title = "Weather Forecast" # Dashboard title
+                    dashboardHeader(title = logo_turquoise_gradient # Dashboard title
                                     
                     ),
                     
                     dashboardSidebar(), # Initializing a sidebar
                     
-                    dashboardBody( useShinyjs(), useShinyalert(), # Shiny alert for cool popups
+                    dashboardBody( useShinyjs(), useShinyalert(), shinyDashboardThemes(theme = "grey_dark"),# Shiny alert for cool popups
                       
                       tags$head(tags$style(HTML('                       
                                                 .main-header .logo {
@@ -40,25 +53,62 @@ ui <- dashboardPage(skin = "blue", # Giving a blue header
                                                 }
                                                 '))), # A CSS template for the font size and font
                       
+                      tags$style(HTML("
+                                               .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                                               color: #ffffff;
+                                               }
+                                               ### ADD THIS HERE ###
+                                               .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+                                               
+                                               ###To change text and background color of the `Select` box ###
+                                               .dataTables_length select {
+                                               color: #0E334A;
+                                               background-color: #0E334A
+                                               }
+                                               
+                                               ###To change text and background color of the `Search` box ###
+                                               .dataTables_filter input {
+                                               color: #0E334A;
+                                               background-color: #0E334A
+                                               }
+                                               
+                                               thead {
+                                               color: #ffffff;
+                                               }
+                                               
+                                               tbody {
+                                               color: #ffffff;
+                                               }
+                                               
+                                               " # A CSS template to change the default colors of the text in the datatable
+                                      
+                                      
+                      )),
+                      
+                      tags$style(type="text/css", # Making a custom CSS class to hide all errors popping up on the front end
+                                 ".shiny-output-error { visibility: hidden; }",
+                                 ".shiny-output-error:before { visibility: hidden; }"
+                      ),
+                      
                       fluidRow(
                         
-                        tabBox(height = "900px", width = "1000px",
+                        tabBox(height = "1100px", width = "1000px",
                                
                                tabPanel(title = tagList(icon("project-diagram", class = "fas fa-project-diagram") # Creating the tabset panels
                                                         
                                                         , "FORECAST FOR THE NEXT 5 DAYS"),
                                         
-                                        box(plotOutput("TempPlot"), status = "primary", solidHeader = TRUE, # Temperature plot
+                                        box(plotOutput("TempPlot", height = "550px"), status = "primary", solidHeader = TRUE, # Temperature plot
                                             
-                                            title = "Temp VS Feels Like", width = 8, height = 512, collapsible = TRUE),
+                                            title = "Temp VS Feels Like", width = 9, height = 612, collapsible = TRUE),
                                         
                                         box(tableOutput("CurrTemp"), status = "primary", # Small boxes to show current weather attributes
                                             
-                                            title = "Current Temperature (C)", width = 3, height = 85, collapsible = TRUE),
+                                            title = "Current Temperature (\u00B0C)", width = 3, height = 85, collapsible = TRUE),
                                         
                                         box(tableOutput("CurrFeelsLike"), status = "primary", # Small boxes to show current weather attributes
                                             
-                                            title = "Feels Like Currently (C)", width = 3, height = 85,
+                                            title = "Feels Like Currently (\u00B0C)", width = 3, height = 85,
                                             
                                             collapsible = TRUE),
                                         
@@ -76,34 +126,55 @@ ui <- dashboardPage(skin = "blue", # Giving a blue header
                                         
                                         box(tableOutput("CurrPressure"), status = "primary", # Small boxes to show current weather attributes
                                             
-                                            title = "Current Pressure (Pascal)", width = 3, height = 85, collapsible = TRUE)
+                                            title = "Current Pressure (Pascal)", width = 3, height = 85, collapsible = TRUE),
+                                        
+                                        box(DT::dataTableOutput("Fluctuations"), status = "primary", solidHeader = TRUE, # Displaying any significant temperature fluctuations
+                                            
+                                            title = "Upcoming Temperature Fluctuations (>3 and <-3 Degress Celcius)", width = 9, height = 350, collapsible = TRUE),
+                                        
+                                        box(title = "Preventive Measures", "See a major fluctuation? Check out the Preventive Measures to stay ahead of Infections!", 
+                                            actionButton("PreventiveMeasures", label = "Preventive Measures", icon = icon(name = "directions"), 
+                                                         onclick = "window.open('https://webhygieia.tech/preventive-measures/', '_blank')"), 
+                                            
+                                            status = "primary", 
+                                            
+                                            width = 3, height = 350, collapsible = TRUE, solidHeader = TRUE) # Making an action button which will redirect the user to the preventive measures tab
+                                        
                                ),
                                
                                
-                               tabPanel(title = tagList(icon("th-list", lib = "glyphicon"), "3-h 5-day Forecast"),
+                               
+                               
+                    
+                    
+                               
+                               
+                               tabPanel(title = tagList(icon("th-list", lib = "glyphicon"), "3-H 5-DAY FORECAST"),
                                         
                                         DT::dataTableOutput("ForecastTable") # Data table for the 3-h 5-day forecast
                                ),
+                    
                                
-                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "Wind Speed Forecast"), # Another tabset panel for wind
+                               
+                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "WIND SPEED FORECAST"), # Another tabset panel for wind
                                         
-                                        box(plotOutput("Wind"), status = "primary", solidHeader = TRUE,
+                                        box(plotOutput("Wind", height = "550px"), status = "primary", solidHeader = TRUE,
                                             
-                                            title = "WIND", width = 8, height = 512, collapsible = TRUE)
+                                            title = "WIND", width = 9, height = 612, collapsible = TRUE)
                                ),
                                
-                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "Humidity Forecast"), # Another tabset panel for humidity
+                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "HUMIDITY FORECAST"), # Another tabset panel for humidity
                                         
-                                        box(plotOutput("Humidity"), status = "primary", solidHeader = TRUE,
+                                        box(plotOutput("Humidity", height = "550px"), status = "primary", solidHeader = TRUE,
                                             
-                                            title = "HUMIDITY", width = 8, height = 512, collapsible = TRUE)
+                                            title = "HUMIDITY", width = 9, height = 612, collapsible = TRUE)
                                ),
                                
-                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "Pressure Forecast"), # Another tabset panel for pressure
+                               tabPanel(title = tagList(icon("Wind", class = "fas fa-wind"), "PRESSURE FORECAST"), # Another tabset panel for pressure
                                         
-                                        box(plotOutput("Pressure"), status = "primary", solidHeader = TRUE,
+                                        box(plotOutput("Pressure", height = "550px"), status = "primary", solidHeader = TRUE,
                                             
-                                            title = "PRESSURE", width = 8, height = 512, collapsible = TRUE)
+                                            title = "PRESSURE", width = 9, height = 612, collapsible = TRUE)
                                )
                                
                         )
@@ -117,8 +188,9 @@ server <- function(input, output) {
   addClass(selector = "body", class = "sidebar-collapse") # Adding a JS class to automatically collapse the sidebar
   
   shinyalert(title = "WELCOME TO OUR WEATHER API!", type = "info", showConfirmButton = TRUE, confirmButtonText = "GOT IT!", 
-             text = "You will now be able to receive warnings about 
-             major temperature fluctuations and see live changes in wind speeds, humidity and pressure!") # A pop-up alert to let the user know what the application is about
+             text = paste("You will now be able to receive warnings about", 
+             strong("major temperature fluctuations and see live changes in wind speeds, humidity and pressure!")),
+             confirmButtonCol = "#40E0D0", html = TRUE) # A pop-up alert to let the user know what the application is about
   
   owmr_settings("ece333c8c4fcf1e8b62947374d3c34f5") # Setting API Access token
   
@@ -218,7 +290,7 @@ server <- function(input, output) {
   output$Humidity <- renderPlot({
     
       melbs_forecast_tidy <- melbs_forecast %>% select(date, humidity_avg) %>% 
-                             gather(key = "Humidity", value = "value", -date) # Transforming humidity data to plot as a line chart
+      gather(key = "Humidity", value = "value", -date) # Transforming humidity data to plot as a line chart
     
       melbs_forecast_tidy %>% ggplot(aes(x = date, y = value, label = round(value, 2))) + 
       geom_line(aes(color = 'Humidity')) + 
@@ -234,7 +306,7 @@ server <- function(input, output) {
   output$Pressure <- renderPlot({
     
       melbs_forecast_tidy <- melbs_forecast %>% select(date, pressure_avg) %>% 
-                             gather(key = "Pressure", value = "value", -date) # Transforming pressure data to plot as a line chart
+      gather(key = "Pressure", value = "value", -date) # Transforming pressure data to plot as a line chart
     
       melbs_forecast_tidy %>% ggplot(aes(x = date, y = value, label = round(value, 2))) + 
       geom_line(aes(color = 'Pressure')) + 
@@ -247,26 +319,36 @@ server <- function(input, output) {
     
   })
   
-  for(i in 1:nrow(melbs_forecast)) { # Running a loop to get the emperature difference on consecutive days
+  output$Fluctuations <- DT::renderDataTable({
+
+      tempFluctuations <- NULL # Initializing a NULL object which we will later use to append values to
     
-    melbs_forecast$temp_diff_avg[i] <- melbs_forecast$temp_avg[i] - melbs_forecast$temp_avg[i+1] # Storing the data as a new column
-    
+      for(i in 1:nrow(melbs_forecast)) { # Running a loop to get the temperature difference on consecutive days
+
+      melbs_forecast$temp_diff_avg[i] <- melbs_forecast$feels_like_avg[i] - melbs_forecast$feels_like_avg[i+1] # Storing the data as a new column
+
+      }
+
+      melbs_forecast$temp_diff_avg[is.na(melbs_forecast$temp_diff_avg)] <- 0 # Converting NA values to 0 for simplicity
+
+      for(i in 1:6) { # Running a loop to check if there are any major temperature fluctuations
+
+      if(melbs_forecast$temp_diff_avg[i] > 3 | melbs_forecast$temp_diff_avg[i] < -3) { # Checking if there is a difference of more than 3 degrees, both ways
+
+
+      
+      tempFluctuations <- rbind(tempFluctuations, as.data.frame(cbind(as.character.Date(melbs_forecast$date[i]), 
+                                                                      cbind(as.character.Date(melbs_forecast$date[i+1]), 
+                                                                            -1 * melbs_forecast$temp_diff_avg[i])))) # Making a dataframe with all the required values
+      
+      }
+        
   }
+      names(tempFluctuations) <- c("From Date", "To Date", "Temperature Fluctuation (Feels Like)") # Defining column names
+      
+      tempFluctuations # Returning our dataframe
+  })
   
-  melbs_forecast$temp_diff_avg[is.na(melbs_forecast$temp_diff_avg)] <- 0 # Converting NA values to 0 for simplicity
-  
-  for(i in 1:6) { # Running a loop to check if there are any major temperature fluctuations
-    
-    if(melbs_forecast$temp_diff_avg[i] > 3 | melbs_forecast$temp_diff_avg[i] < -3) { # Checking if there is a difference of more than 3 degrees, both ways
-      
-      Sys.sleep(7) # Sleeping time to give the first Shinyalert popup 7 seconds so it can be viewed by the user
-      
-      textTemp <- paste("There will be a temperature fluctuation of", paste(melbs_forecast$temp_diff_avg[i], 
-                                                                paste("degrees", paste("on", melbs_forecast$date[i+1])))) # Making a custom modal message for temperature fluctuations
-      
-      shinyalert(title = "Watch out!", text = textTemp, type = "warning") # Enabling Shinyalert to do what it does best, popup!
-    }
-  }
   
 } # Closing the server side design
 
