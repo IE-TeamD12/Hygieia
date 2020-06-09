@@ -33,7 +33,7 @@ We used Leaflet, which is one of the most popular open-source javascript library
 
 # IE Tableau
 
-Consists of 2 tableau workbooks, and the data is included with the workbook,the descriptions of the workbooks are as follows:
+Consists of 2 tableau workbooks, and the data is included with the workbook, the descriptions of the workbooks are as follows:
 
 1. **Infection Prevention** - It is a dashboard that maps the preventive measures to each infection;
 
