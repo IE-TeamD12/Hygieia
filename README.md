@@ -31,3 +31,11 @@ This application helps the user find the nearest hospital in Victoria, Australia
 
 We used Leaflet, which is one of the most popular open-source javascript library for interactive maps. It’s used by websites like Github, NY Times, Flickr etc. for their platforms. Leaflet allows us to integrate an interactive map and build on top of it, it allows us to add markers, add polygons, add different shapes, play around with the coordinate system, draw points to cover an area, cluster points on a map as one etc. We can also use custom map layers as basemaps, create popups for the user and much more. The best part is that it works effortlessly with R and especially Shiny, it has it’s own render functions for input and output. You can read more about the library at : https://rstudio.github.io/leaflet/ 
 
+# IE Tableau
+
+Consists of 2 tableau dashobards, the descriptions of the dashboards are as follows:
+
+1. **Infection Prevention** - It is a dashboard that maps the preventive measures to each infection;
+
+2. **Vaccines** - It is comaprision of vaccines available in Australia against the ones that maybe available in your origin country. The dashboard provides a type in filter where you can type in your origin country to search for the vaccines available in your country. 
+- The filter is implemented by creating a Calculated Field with the calculation for the filter and it is then mapped to a Parameter called Type in Search Filter which is displayed as the filter tab on the dashboard.
